@@ -1,22 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Type Ahead 👀</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Type Ahead 👀</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <form class="search-form">
+      <input type="text" class="search" placeholder="City or State" />
+      <ul class="suggestions">
+        <li>Filter for a city</li>
+        <li>or a state</li>
+      </ul>
+    </form>
+    <script>
+      const endpoint =
+        "https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json";
 
-  <form class="search-form">
-    <input type="text" class="search" placeholder="City or State">
-    <ul class="suggestions">
-      <li>Filter for a city</li>
-      <li>or a state</li>
-    </ul>
-  </form>
-<script>
-const endpoint = 'https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json';
+      const main = async () => {
+        const input = document.querySelector("input");
+        const suggestionsList = document.querySelector(".suggestions");
+        const cities = await fetchCities();
 
-</script>
-</body>
+        const updateSuggestionsFromInput = (e) => {
+          const query = e.target.value.trim().toLowerCase();
+          const matchingCities = filterCities(query, cities);
+          const suggestions = matchingCities.map((city) =>
+            cityToSuggestion(city, query)
+          );
+
+          updateSuggestions(suggestions);
+        };
+
+        const updateSuggestions = (suggestions) => {
+          suggestionsList.innerHTML = "";
+          suggestionsList.append(...suggestions);
+        };
+
+        input.addEventListener("input", updateSuggestionsFromInput);
+      };
+
+      const fetchCities = async () => {
+        const response = await fetch(endpoint);
+        const data = await response.json();
+
+        return data;
+      };
+
+      const filterCities = (query, cities) => {
+        const regex = new RegExp(query, "gi");
+
+        return cities.filter((city) => {
+          return city.city.match(regex) || city.state.match(regex);
+        });
+      };
+
+      const cityToSuggestion = (city, query) => {
+        const cityName = highlightTerm(city.city, query);
+        const stateName = highlightTerm(city.state, query);
+
+        const item = document.createElement("li");
+        const name = document.createElement("span");
+        name.innerHTML = `${cityName}, ${stateName}`;
+
+        const population = document.createElement("span");
+        population.classList.add("population");
+        population.textContent = Number(city.population).toLocaleString();
+
+        item.append(name, population);
+
+        return item;
+      };
+
+      const highlightTerm = (string, term) => {
+        const regex = new RegExp(term, "gi");
+        return string.replace(regex, `<span class="hl">${term}</span>`);
+      };
+
+      main();
+    </script>
+  </body>
 </html>
